@@ -1,0 +1,243 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <link rel="icon" href="/data/favicon.ico" type="image/vnd.microsoft.icon">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sentiment Analyzer</title>
+    <style>
+        ::-webkit-scrollbar {
+        width: 0.6vw;
+        }
+
+        ::-webkit-scrollbar-track {
+        background: #0000;
+        }
+
+        ::-webkit-scrollbar-thumb {
+        background: #888;
+        border-radius: 0.5vw;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+        background: #555;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #000;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            font-family: 'HP Simplified';
+            color: white;
+        }
+        .bg {
+            position: fixed;
+            bottom: 0;
+            left: 50%;
+            transform: translate(-50%);
+            height: 100vh;
+            width: 100vw;
+            z-index: -1;
+            opacity: 0.2;
+            object-fit: cover;
+        }
+        .header {
+            background-color: #111b;
+            border-bottom: white solid 2px;
+            height: 10vh;
+            padding: 2vh;
+            text-align: left;
+            display: flex;
+            font-size: 40px;
+            font-weight: bold;
+        }
+        .header > span {
+            margin: auto 0;
+        }
+        .header > span:hover {
+            text-decoration: underline;
+        }
+        #search-form {
+            display: block;
+            right: 0;
+            position: absolute;
+            margin: auto 1vw;
+        }
+        #search-form > input {
+            width: 30vw;
+            border: initial;
+            background-color: #000;
+            color:white;
+            height: 40px;
+            border-radius: 0.5vw;
+            margin: 10px;
+            padding-left: 10px;
+        }
+        #search-form > button {
+            height: 40px;
+            border: initial;
+            border-radius: 0.5vw;
+            background-color: #000;
+            color: white;
+        }
+        #search-form > input:hover {
+            background-color: #111;
+        }
+        #search-form > button:hover {
+            background-color: #111;
+            cursor: pointer;
+        }
+        input, button {
+            font-family: 'HP Simplified';
+        }
+        main {
+            padding: 1%;
+        }
+        #main {
+            display: block;
+        }
+        a {
+            text-decoration: none;
+            color: white;
+        }
+        #info {
+            width: 99%;
+            background-color: #000a;
+            border-radius: 0.5vw;
+            height: 15vh;
+            padding: 0.5%;
+            display: flex;
+        }
+        #info:hover{
+            background-color: #000d;
+        }
+        #info > img {
+            max-height: 98%;
+            display: block; 
+            border-radius: 0.5vw;
+        }
+        .info-text{
+            margin: auto 2%;
+            display: block;
+            white-space: nowrap;
+        }
+        h2, h1 {
+            white-space: nowrap;
+            text-align: center;
+        }
+        .logo {
+            margin-left: auto;
+            margin-top: auto;
+            position: relative;
+            display: flex;
+            height: 5vh;
+        }
+        span{
+            vertical-align: bottom;
+            line-height: 8vh;
+            white-space: nowrap;
+        }
+        #reviews {
+            width: 100%;
+            height: 62vh;
+            overflow-y: scroll;
+            background-color: #333a;
+            border-radius: 0.5vw;
+            margin-top: 3vh;
+        }
+        .charts {
+            display: flex;
+        }
+        .pie {
+            width: 40%;
+            margin: 1%;
+        }
+        .bar {
+            width:60%;
+            margin: 1%;
+        }
+        .pie img, .bar img{
+            max-width: 100%;
+            max-height: 100%;
+            display: block; 
+            margin: auto;
+            border-radius: 0.5vw;
+        }
+        #user, #critic{
+            display: block;
+            margin: auto;
+        }
+    </style>
+</head>
+<body>
+    <img src="../data/bg.png" class="bg">
+    <div class="header">
+        <span><a href="/">Sentiment Analyzer</a></span>
+        <form id="search-form">
+            <input type="text" id="search-input" name="search-input" required placeholder="Search for a Movie">
+            <button type="submit">Search</button>
+        </form>
+    </div>
+    <main>
+    <div id="main">
+        <a href="{{url | safe}}" target="_blank">
+        <div id="info">
+            <img src="{{poster | safe}}" alt="Movie Poster">
+            <div class="info-text">
+                <h2>{{title | safe}}</h2>
+            </div>
+            <div class="logo">
+                <span>Click to view the reviews on</span> <img src="https://images.fandango.com/cms/assets/2d5a3340-be84-11ed-9d20-83ee649e98bd--rt25-logo-mainnav-161x50.svg" alt="Rotten tomatoes logo">
+            </div>
+        </div>
+        </a>
+        <div id="reviews">
+            <div id="user">
+            <h1>Users</h1>
+            <div class="charts">
+                <div class="pie">
+                    {{user_pie | safe}}
+                </div>
+                <div class="bar">
+                    {{user_bar | safe}}
+                </div>
+            </div>
+            </div>
+<hr>
+            <div id="critic">
+            <h1>Critics</h1>
+            <div class="charts">
+                <div class="pie">
+                    {{critic_pie | safe}}
+                </div>
+                <div class="bar">
+                    {{critic_bar | safe}}
+                </div>
+            </div>
+            </div>
+        </div>
+    </div>
+    </main>
+
+    <script>
+        document.getElementById('search-form').addEventListener('submit', function (event) {
+            event.preventDefault();
+            var inputValue = document.getElementById('search-input').value;
+            var redirectURL = '/search?query=' + encodeURIComponent(inputValue);
+            window.location.href = redirectURL;
+        });
+
+        window.onload = function (){
+            element = document.getElementById('reviews')
+            element.scrollTo({ top: element.scrollHeight, behavior: 'smooth' });
+            setTimeout(function () {
+                element.scrollTo({ top: 0, behavior: 'smooth' });
+            }, 650);
+        }
+    </script>
+</body>
+</html>

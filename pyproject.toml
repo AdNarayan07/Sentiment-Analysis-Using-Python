@@ -1,0 +1,32 @@
+[tool.poetry]
+name = "python-template"
+version = "0.1.0"
+description = ""
+authors = ["Your Name <you@example.com>"]
+
+[tool.poetry.dependencies]
+python = ">=3.10.0,<3.11"
+flask = "^3.0.0"
+requests = "^2.31.0"
+numpy = "^1.26.2"
+pandas = "^2.1.4"
+scikit-learn = "^1.3.2"
+selenium = "^4.16.0"
+joblib = "^1.3.2"
+matplotlib = "^3.8.2"
+nltk = "^3.8.1"
+beautifulsoup4 = "^4.12.2"
+
+[tool.pyright]
+# https://github.com/microsoft/pyright/blob/main/docs/configuration.md
+useLibraryCodeForTypes = true
+exclude = [".cache"]
+
+[tool.ruff]
+# https://beta.ruff.rs/docs/configuration/
+select = ['E', 'W', 'F', 'I', 'B', 'C4', 'ARG', 'SIM']
+ignore = ['W291', 'W292', 'W293']
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"

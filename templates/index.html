@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <link rel="icon" href="/data/favicon.ico" type="image/vnd.microsoft.icon">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sentiment Analyzer</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-size: cover; 
+            background-attachment: fixed;
+            background-color: #000;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            font-family: 'HP Simplified';
+            color: white;
+        }
+        .bg {
+            position: fixed;
+            bottom: 0;
+            left: 50%;
+            transform: translate(-50%);
+            height: 100vh;
+            width: 100vw;
+            z-index: -1;
+            opacity: 0.2;
+            object-fit: cover;
+        }
+        a {
+            text-decoration: none;
+            color: white;
+        }
+        .header {
+            background-color: #111b;
+            border-bottom: white solid 2px;
+            height: 10vh;
+            padding: 2vh;
+            text-align: left;
+            display: flex;
+            font-size: 40px;
+            font-weight: bold;
+        }
+        .header > span {
+            margin: auto 0;
+        }
+        .header > span:hover {
+            text-decoration: underline;
+        }
+        .search-form {
+            display: block;
+            right: 0;
+            position: absolute;
+            margin: auto 1vw;
+        }
+        .search-form > input {
+            width: 30vw;
+            border: initial;
+            background-color: #000;
+            color:white;
+            height: 40px;
+            border-radius: 0.5vw;
+            margin: 10px;
+            padding-left: 10px;
+        }
+        .search-form > button {
+            height: 40px;
+            border: initial;
+            border-radius: 0.5vw;
+            background-color: #000;
+            color: white;
+        }
+        
+        .search-form > input:hover {
+            background-color: #111;
+        }
+        
+        .search-form > button:hover {
+            background-color: #111;
+            cursor: pointer;
+        }
+        input, button {
+            font-family: 'HP Simplified';
+        }
+        main {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+        }
+        .main {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            right: initial;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            width: 100vw;
+            height: 20%;
+        }
+        .big {
+            display: flex;
+            left: 50%;
+            right: initial;
+            transform: translate(-50%, 0);
+            position: inherit;
+            margin: initial;
+        }
+        .big > input {
+            width: 70vw;
+            border: initial;
+            background-color: #222e;
+            color:white;
+            height: 15vh;
+            border-radius: 0.5vw;
+            margin: 3vh;
+            padding-left: 5.5vh;
+            font-size: 7vh;
+        }
+        .big > button {
+            height: 15vh;
+            width: 15vh;
+            border: initial;
+            padding: auto;
+            text-align: center;
+            border-radius: 50%;
+            background-color: #222;
+            color: white;
+            margin: 3vh;
+        }
+        .big > button img {
+            margin-top: 4px;
+            height: 6vh;
+            width: 6vh;
+        }
+    </style>
+</head>
+<body>
+    <img src="../data/bg.png" class="bg">
+    <div class="header">
+        <span><a href="/">Sentiment Analyzer</a></span>
+        <form class="search-form">
+            <input type="text" class="search-input" name="search-input" required placeholder="Search for a Movie/Show">
+            <button type="submit">Search</button>
+        </form>
+    </div>
+    <main>
+        <div class="main">
+            Get what people and critics think about a show...
+            <form class="search-form big">
+                <input type="text" class="search-input" name="search-input" required placeholder="Search for a Movie/Show">
+                <!-- Corrected rule -->
+                <button type="submit"><img src="../data/search-icon.svg"></button>
+            </form>
+        </div>
+    </main>
+
+    <script>
+        document.querySelectorAll('.search-form').forEach((element) => {
+            element.addEventListener('submit', function (event) {
+                event.preventDefault();
+                let inputValue = event.target.querySelector('.search-input').value;
+
+                let redirectURL = '/search?query=' + encodeURIComponent(inputValue);
+                window.location.href = redirectURL;
+            });
+        });
+    </script>
+</body>
+</html>

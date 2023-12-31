@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <link rel="icon" href="/data/favicon.ico" type="image/vnd.microsoft.icon">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sentiment Analyzer</title>
+    <style>
+         /* width */
+         ::-webkit-scrollbar {
+        width: 0.6vw;
+        }
+
+        /* Track */
+        ::-webkit-scrollbar-track {
+        background: #0000;
+        }
+
+        /* Handle */
+        ::-webkit-scrollbar-thumb {
+        background: #eee;
+        border-radius: 0.5vw;
+        }
+
+        /* Handle on hover */
+        ::-webkit-scrollbar-thumb:hover {
+        background: #999;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            background: radial-gradient(circle, #1a0f3e99, #0000);
+            background-size: cover;
+            background-attachment: fixed;
+            background-color: #000;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            font-family: 'HP Simplified';
+            color: white;
+        }
+        .bg {
+            position: fixed;
+            bottom: 0;
+            left: 50%;
+            transform: translate(-50%);
+            height: 100vh;
+            width: 100vw;
+            z-index: -1;
+            opacity: 0.2;
+            object-fit: cover;
+        }
+        a {
+            text-decoration: none;
+            color: white;
+        }
+        .header {
+            background-color: #111b;
+            border-bottom: white solid 2px;
+            height: 10vh;
+            padding: 2vh;
+            text-align: left;
+            display: flex;
+            font-size: 40px;
+            font-weight: bold;
+        }
+        .header > span {
+            margin: auto 0;
+        }
+        .header > span:hover {
+            text-decoration: underline;
+        }
+        #search-form {
+            display: block;
+            right: 0;
+            position: absolute;
+            margin: auto 1vw;
+        }
+        #search-form > input {
+            width: 30vw;
+            border: initial;
+            background-color: #000;
+            color:white;
+            height: 40px;
+            border-radius: 0.5vw;
+            margin: 10px;
+            padding-left: 10px;
+        }
+        #search-form > button {
+            height: 40px;
+            border: initial;
+            border-radius: 0.5vw;
+            background-color: #000;
+            color: white;
+        }
+        #search-form > input:hover {
+            background-color: #111;
+        }
+        #search-form > button:hover {
+            background-color: #111;
+            cursor: pointer;
+        }
+        input, button {
+            font-family: 'HP Simplified';
+        }
+        #search-results {
+            overflow-y: scroll;
+            overflow-wrap: break-word;
+            max-height: 70vh;
+            width: 90vw;
+            background-color: #222;
+            padding: 10px;
+            position: absolute;
+            top: 18vh;
+            left: 50%;
+            transform: translate(-50%);
+            border-radius: 10px;
+        }
+        ul {
+            padding: 0%;
+        }
+        .search-list {
+            list-style-type: none;
+            background-color: #000;
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 10px;
+            cursor: pointer;
+        }
+
+        .search-list:hover {
+            background-color: #111;
+        }
+        #no-links-form {
+            display: none;
+            text-align: center;
+            padding: 20px;
+            border-radius: 5px;
+            margin-top: 20px;
+        }
+
+        #no-links-form > label {
+            color: white;
+            margin-right: 10px;
+        }
+
+        #no-links-form > input {
+            width: 60%;
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            background-color: #222; 
+            color: white;
+            margin: 10px;
+        }
+
+        #no-links-form > input:hover {
+            background-color: #111;
+        }
+        #no-links-form > button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            background-color: #222;
+            color: white;
+            cursor: pointer;
+            margin: 10px;
+        }
+
+        #no-links-form > button:hover {
+            background-color: #111;
+        }
+        .logo{
+            position: fixed;
+            bottom: 0;
+            right: 0;
+            width: -moz-fit-content;
+            width: fit-content;
+            margin: 1vw
+        }
+        .logo > img {
+            height: 32px;
+        }
+    </style>
+</head>
+<body>
+    <img src="../data/bg.png" class="bg">
+    <div class="header">
+        <span><a href="/">Sentiment Analyzer</a></span>
+        <form id="search-form">
+            <input type="text" id="search-input" name="search-input" required placeholder="Search for a Movie/Show">
+            <button type="submit">Search</button>
+        </form>
+    </div>
+    <main>
+        <div id="search-results"></div>
+        <form id="no-links-form" onsubmit="submitManualLink(event)">
+            <label for="manual-link">{{Err}}, please enter the link to main page of movie from rotten tomatoes manually:</label><br>
+            <input type="text" id="manual-link" name="manual-link" required>
+            <button type="submit">Submit</button>
+        </form>
+        <a href="https://www.rottentomatoes.com">
+        <div class="logo">
+            <span>Powered by: </span> <img src="https://images.fandango.com/cms/assets/2d5a3340-be84-11ed-9d20-83ee649e98bd--rt25-logo-mainnav-161x50.svg" alt="Rotten tomatoes logo">
+        </div>
+        </a>
+    </main>
+
+    <script>
+        document.onload = load()
+        function load(){
+            const query = new URLSearchParams(window.location.search).get('query')
+            const links = {{ links|tojson|safe }};
+            if (links.length === 0) {
+                document.getElementById('no-links-form').style.display = 'block';
+                document.getElementById('search-results').style.display = 'none';
+            } else {
+                const linksString = links.map(obj => Object.entries(obj).map(([key, value]) => `<a href="/review?url=${encodeURIComponent(value)}"><li class="search-list"><span style="font-size:1.5em">${key}</span><br><span style="color:#2168ff" class="url">${value}</span></li>`).join('')).join('')
+                const msg = "<span style='font-size: 1.5em'>Please select the correct link from search results: </span><br>"
+                const finalString = msg+`<ul>${linksString}</ul>`
+                document.getElementById('search-results').innerHTML = finalString;
+            }
+        }
+
+        document.getElementById('search-form').addEventListener('submit', (event) => {
+             event.preventDefault();
+             let query = document.getElementById('search-input').value;
+             let redirectURL = '/search?query=' + encodeURIComponent(query);
+             window.location.href = redirectURL;
+         });
+         function submitManualLink(event) {
+            event.preventDefault()
+            const manualLink = document.getElementById('manual-link').value;
+            if (manualLink.trim() !== '') {
+                if(!manualLink.startsWith('https://www.rottentomatoes.com/')){
+                    alert( "Please enter a valid link from rotten tomatoes starting with https://www.rottentomatoes.com/")
+                    document.getElementById('manualLink').value = ""
+                } else {
+                    window.location.href = '/review?url=' + encodeURIComponent(manualLink);
+                }
+            }
+        }
+    </script>
+</body>
+</html>
