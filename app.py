@@ -1,9 +1,8 @@
 from flask import Flask, render_template, request, send_file, redirect
+import json
 import requests
+from urllib.request import urlopen
 from bs4 import BeautifulSoup
-from selenium import webdriver
-from selenium.webdriver.common.by import By
-from selenium.webdriver.chrome.options import Options
 import re
 import joblib
 from nltk.sentiment import SentimentIntensityAnalyzer
@@ -54,59 +53,43 @@ def search_links(query):
 
 # Function to scrape reviews using Selenium
 def get_reviews(movie_url, review_type):
-    css_class = "review-text"
+    page = urlopen(movie_url)
+    html_bytes = page.read()
+    html = html_bytes.decode("utf-8")
+    emsId = re.search(r'"emsId":\s*"([^"]+)"', html).group(1)
+    title = re.search(r'"titleName":\s*"([^"]+)"', html).group(1)
+    title_type = re.search(r'"titleType":\s*"([^"]+)"', html).group(1)
+    vanity =  re.search(r'"vanity":\s*"([^"]+)"', html).group(1)
 
-    if review_type == "user":
-        movie_url = movie_url + "?type=user"
-        css_class = "audience-reviews__review"
+    s_no = ""
+    if title_type == "Tv":
+        s_no = re.search(r'"vanity":\s*"([^"]+)"', html).group(1)
 
-    chrome_options = Options()
-    chrome_options.add_argument('--headless')
-    chrome_options.add_argument('--disable-extensions')
-    chrome_options.add_argument('--disable-infobars')
-    chrome_options.add_argument('--blink-settings=imagesEnabled=false')
-    chrome_options.add_argument('--enable-chrome-browser-cloud-management')
-    driver = webdriver.Chrome(options=chrome_options)
+    poster_page = urlopen(f'https://www.rottentomatoes.com/{"tv" if title_type == "Tv" else "m"}/{vanity}/{f"/{s_no}/" if s_no else ""}reviews')
+    soup = BeautifulSoup(poster_page, 'html.parser')
+    poster_link = soup.find('img', {'data-qa': 'sidebar-poster-img'})
+    if poster_link:
+        poster_link = poster_link.get('src')
+    else:
+        poster_link = '/data/favicon.ico'
+    
+    hasNextPage = True
+    reviews = []
+    after = ""
+    while hasNextPage and len(reviews) < 100:
+        url = f'https://www.rottentomatoes.com/napi/{"season" if title_type == "Tv" else "movie"}/{emsId}/reviews/{review_type}?after={after}'
+        response = urlopen(url).read().decode('utf-8')
+        response_object = json.loads(response)
+        responseArray = response_object['reviews']
+        for review in responseArray:
+            reviews.append(review['quote'])
+        hasNextPage = response_object['pageInfo']['hasNextPage']
+        if hasNextPage:
+            after = response_object['pageInfo']['endCursor']
+    global show_info
+    show_info = [title, poster_link]
+    return reviews
 
-    try:
-        driver.get(movie_url)
-
-        # Click the "Load More" button until it's not present
-        while True:
-            try:
-                load_more_button = driver.find_element(By.CSS_SELECTOR, "div.load-more-container > rt-button")
-                load_more_button.click()
-            except Exception as e:
-                break
-            reviews = driver.find_elements(By.CLASS_NAME, css_class)
-            if len(reviews) >= 100:
-                break
-
-        # Get the HTML content after loading all reviews
-        page_source = driver.page_source
-
-        # Use BeautifulSoup to parse the HTML
-        soup = BeautifulSoup(page_source, 'html.parser')
-
-        # Extract reviews
-        reviews = soup.find_all('p', class_=css_class)
-        title = soup.find('a', class_='sidebar-title')
-        if title:
-            title = title.get_text()
-        else:
-            title = "Title"
-
-        poster_link = soup.find('img', {'data-qa': 'sidebar-poster-img'})
-        if poster_link:
-            poster_link = poster_link.get('src')
-        else:
-            poster_link = '/data/favicon.ico'
-        global show_info
-        show_info = [title, poster_link]
-        
-        return [review.get_text() for review in reviews]
-    finally:
-        driver.quit()
 
 # Function to clean text
 def clean(input_string):
@@ -248,7 +231,7 @@ def search():
                 search_data[1] = "No links found for your query"
             return render_template('search.html', links=search_data[0], Err=search_data[1])
         except Exception as e:
-            print(f"Error during review analysis: {e}")
+            print(e)
             return render_template('error.html', error=f"{e}")
     else:
         return redirect('/')
@@ -258,17 +241,23 @@ def review():
     url = request.args.get('url')
     if url:
         try:       
-            url = url + '/reviews'
+            url = url
             user = get_reviews(url, 'user')
-            critic = get_reviews(url, 'critic')
+            print('acquired user reviews')
+            critic = get_reviews(url, 'all')
+            print('acquired critic reviews')
             print(show_info[0], show_info[1])
             user_pie_img, user_bar_img, critic_pie_img, critic_bar_img = '', '', '', ''
 
             if len(user) > 0:
-                user_reviews = analyze_sentiment(user)
                 user_polarity = get_polarity_scores(user)
+                print('Polarity scores calculated for user reviews')
+                user_reviews = analyze_sentiment(user)
+                print('Sentiment analysis completed for user reviews')
                 user_bar = plot_bar(user_polarity, "User Sentiments")
+                print('Bar plot generated for user reviews')
                 user_pie = plot_pie(user_reviews, "User Reviews")
+                print('Pie plot generated for user reviews')
                 user_bar_img = f'<img src="data:image/png;base64,{user_bar}" alt="User Reviews Bar Plot">'
                 user_pie_img = f'<img src="data:image/png;base64,{user_pie}" alt="User Reviews Pie Plot">'
             else:
@@ -276,10 +265,14 @@ def review():
                 user_pie_img = "No User Reviews Found"
 
             if len(critic) > 0:
-                critic_reviews = analyze_sentiment(critic)
                 critic_polarity = get_polarity_scores(critic)
+                print('Polarity scores calculated for critic reviews')
+                critic_reviews = analyze_sentiment(critic)
+                print('Sentiment analysis completed for critic reviews')
                 critic_bar = plot_bar(critic_polarity, "Critic Sentiments")
+                print('Bar plot generated for critic reviews')
                 critic_pie = plot_pie(critic_reviews, "Critic Reviews")
+                print('Pie plot generated for critic reviews')
                 critic_bar_img = f'<img src="data:image/png;base64,{critic_bar}" alt="Critic Reviews Bar Plot">'
                 critic_pie_img = f'<img src="data:image/png;base64,{critic_pie}" alt="Critic Reviews Pie Plot">'
             else:
@@ -289,7 +282,7 @@ def review():
             return render_template('review.html', user_bar=user_bar_img, user_pie=user_pie_img, critic_bar=critic_bar_img, critic_pie=critic_pie_img, title=show_info[0], url=url, poster=show_info[1])
 
         except Exception as  e:
-            print(f"Error during review analysis: {e}")
+            print(e)
             return render_template('error.html', error=f"{e}")
     else:
         return redirect('/')
